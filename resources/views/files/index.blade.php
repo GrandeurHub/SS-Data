@@ -62,7 +62,13 @@
                         </label>
                         <label class="block">
                             <span class="field-label lg:sr-only">Password</span>
-                            <input type="password" name="password" placeholder="Password" required autocomplete="current-password" class="field !py-1.5 lg:!w-36">
+                            <span class="relative block">
+                                <input :type="showLoginPassword ? 'text' : 'password'" type="password" name="password" placeholder="Password" required autocomplete="current-password" class="field !py-1.5 !pr-9 lg:!w-36">
+                                <button type="button" x-on:click="showLoginPassword = !showLoginPassword" :aria-label="showLoginPassword ? 'Hide password' : 'Show password'" :aria-pressed="showLoginPassword"
+                                    class="absolute inset-y-0 right-0 grid w-9 place-items-center rounded-r-xl text-slate-400 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g x-show="!showLoginPassword"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></g><g x-show="showLoginPassword"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></g></svg>
+                            </button>
+                            </span>
                         </label>
                         <button type="submit"
                                 class="rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
@@ -201,7 +207,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" x-show="auth.isAdministrator" x-on:click="toggleDeleted()"
                             class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-                            :class="showDeleted ? 'bg-slate-900 text-white hover:bg-slate-800' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'">
+                            :class="showDeleted ? 'border border-red-600 bg-red-600 text-white hover:bg-red-700' : 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>
                         <span x-text="showDeleted ? 'Back to files' : 'Deleted files' + (summary.trashed_files ? ' (' + summary.trashed_files + ')' : '')"></span>
                     </button>
@@ -220,7 +226,7 @@
             {{-- Guests can look at files but not download them --}}
             <div x-show="!auth.canDownload && files.length" class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm text-sky-900">
                 <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>
-                <p>You are browsing as a guest. You can view files, but you need to log in to download them.</p>
+                <p>You are browsing as a guest. You can see the list of files, but you need to log in to open or download them.</p>
                 <button type="button" x-on:click="goToLogin()" class="font-semibold underline hover:text-sky-700">Log in</button>
             </div>
 
@@ -280,11 +286,15 @@
                         <div class="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:gap-2">
                             <span class="text-xs text-slate-500" x-text="file.size + ' · ' + (showDeleted ? 'Deleted ' + file.deleted : file.added)"></span>
                             <div class="flex items-center gap-1.5">
-                                <a :href="file.view_url" x-show="!showDeleted" target="_blank" rel="noopener" title="Open in a new tab"
-                                   class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                                <button type="button" x-show="!showDeleted && (canPreview(file) || !auth.canDownload)" x-on:click="openFile(file)"
+                                        :disabled="!auth.canDownload" :title="auth.canDownload ? 'View this file' : 'Log in to open files'"
+                                        :class="auth.canDownload ? 'hover:bg-slate-100' : 'cursor-not-allowed opacity-40'"
+                                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>
                                     Open
-                                </a>
+                                </button>
+                                <span x-show="!showDeleted && auth.canDownload && !canPreview(file)" class="px-2.5 py-1.5 text-xs font-medium text-slate-400"
+                                      title="The browser cannot display this type of file. Download it instead.">No preview</span>
                                 <a :href="file.download_url" x-show="auth.canDownload && !showDeleted"
                                    class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -563,11 +573,11 @@
             <div class="flex flex-wrap items-center justify-between gap-2 px-6">
                 <div class="inline-flex rounded-xl bg-slate-100 p-1 text-sm font-semibold" role="tablist">
                     <button type="button" role="tab" :aria-selected="accountsTab === 'active'" x-on:click="setAccountsTab('active')"
-                            class="rounded-lg px-3 py-1.5 transition" :class="accountsTab === 'active' ? 'bg-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
+                            class="rounded-lg px-3 py-1.5 transition" :class="accountsTab === 'active' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'">
                         Active <span class="opacity-60" x-text="accountCounts.active"></span>
                     </button>
                     <button type="button" role="tab" :aria-selected="accountsTab === 'deleted'" x-on:click="setAccountsTab('deleted')"
-                            class="rounded-lg px-3 py-1.5 transition" :class="accountsTab === 'deleted' ? 'bg-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
+                            class="rounded-lg px-3 py-1.5 transition" :class="accountsTab === 'deleted' ? 'bg-red-600 text-white shadow-sm' : 'text-red-600 hover:bg-red-50'">
                         Deleted <span class="opacity-60" x-text="accountCounts.deleted"></span>
                     </button>
                 </div>
@@ -593,8 +603,14 @@
                     </label>
                     <label class="block">
                         <span class="field-label" x-text="accountForm.id === null ? 'Password' : 'New password (optional)'"></span>
-                        <input type="password" class="field" x-model="accountForm.password" autocomplete="new-password"
-                               :placeholder="accountForm.id === null ? 'At least 8 characters' : 'Leave blank to keep the current one'">
+                        <span class="relative block">
+                            <input :type="showAccountPassword ? 'text' : 'password'" type="password" class="field !pr-9" x-model="accountForm.password" autocomplete="new-password"
+                                   :placeholder="accountForm.id === null ? 'At least 8 characters' : 'Leave blank to keep the current one'">
+                            <button type="button" x-on:click="showAccountPassword = !showAccountPassword" :aria-label="showAccountPassword ? 'Hide password' : 'Show password'" :aria-pressed="showAccountPassword"
+                                    class="absolute inset-y-0 right-0 grid w-9 place-items-center rounded-r-xl text-slate-400 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g x-show="!showAccountPassword"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></g><g x-show="showAccountPassword"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></g></svg>
+                            </button>
+                        </span>
                         <span class="mt-1 block text-sm text-red-600" x-text="accountErrors.password"></span>
                     </label>
                     <label class="block">
@@ -648,6 +664,34 @@
     </div>
     @endcan
 
+    {{-- File viewer: shows spreadsheets as a table, so guests can read them without downloading --}}
+    <div x-show="viewer.open" x-transition.opacity class="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4 backdrop-blur-sm"
+         x-on:keydown.escape.window="viewer.open = false" role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+        <div class="flex max-h-[92vh] w-full max-w-6xl flex-col rounded-3xl bg-white shadow-2xl" x-on:click.outside="viewer.open = false">
+            <div class="flex items-start justify-between gap-4 p-5 pb-3">
+                <div class="min-w-0">
+                    <h2 id="viewer-title" class="truncate text-lg font-bold tracking-tight" x-text="viewer.title"></h2>
+                    <p class="text-xs text-slate-500" x-show="viewer.note" x-text="viewer.note"></p>
+                </div>
+                <button type="button" x-on:click="viewer.open = false" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5 px-5" x-show="viewer.sheetNames.length > 1" role="tablist">
+                <template x-for="(name, index) in viewer.sheetNames" :key="index">
+                    <button type="button" role="tab" :aria-selected="viewer.active === index" x-on:click="viewer.active = index; drawSheet()"
+                            class="rounded-lg px-3 py-1 text-xs font-semibold transition"
+                            :class="viewer.active === index ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" x-text="name"></button>
+                </template>
+            </div>
+            <div class="min-h-[10rem] flex-1 overflow-auto p-5 pt-3">
+                <p class="text-sm text-slate-500" x-show="viewer.loading">Loading the file…</p>
+                <p class="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700" x-show="viewer.error" x-text="viewer.error"></p>
+                <div x-ref="viewerBody" class="overflow-auto rounded-xl border border-slate-200"></div>
+            </div>
+        </div>
+    </div>
+
     {{-- Toast --}}
     <div x-show="toast" x-transition class="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg" x-text="toast" role="status"></div>
 
@@ -659,6 +703,11 @@
             const boot = window.agriIndex;
             const blankDraft = () => ({ file_name: '', title: '', description: '', category: '', item: '', period_type: '', period_value: '', region: '', tags: [] });
             const blankFilters = () => ({ category: '', item: '', period_type: '', period_value: '', region: '', tag: '', q: '' });
+            // Spreadsheet rows are kept outside Alpine's reactive state so large files stay fast.
+            const viewerData = { sheets: [] };
+            const spreadsheetTypes = ['csv', 'xls', 'xlsx', 'ods'];
+            const browserTypes = ['pdf', 'txt', 'json'];
+            const spreadsheetScript = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
             const swatches = { prices: 'bg-amber-500', productions: 'bg-emerald-600', imports: 'bg-sky-500', exports: 'bg-violet-500' };
 
             return {
@@ -674,6 +723,8 @@
                 auth: boot.auth,
                 loginOpen: !!boot.loginFailed,
                 showDeleted: false,
+                showLoginPassword: false, showAccountPassword: false,
+                viewer: { open: false, loading: false, title: '', error: '', note: '', sheetNames: [], active: 0 },
                 editingId: null, editingExtension: '',
                 accountsOpen: false, accountsTab: 'active', accounts: [], accountCounts: { active: 0, deleted: 0 },
                 accountsLoading: false, savingAccount: false, accountErrors: {},
@@ -984,6 +1035,86 @@
                     this.showDeleted = !this.showDeleted;
                     this.selectedIds = [];
                     this.search(true);
+                },
+
+                // ----- Viewing files (no download) -----
+                canPreview(file) { return browserTypes.includes(file.extension) || spreadsheetTypes.includes(file.extension); },
+
+                openFile(file) {
+                    if (!this.auth.canDownload) { this.notify('Log in to open files.'); return; }
+                    if (browserTypes.includes(file.extension)) {
+                        window.open(file.view_url, '_blank', 'noopener'); // the browser shows PDF, text and JSON itself
+                        return;
+                    }
+                    this.openSpreadsheet(file);
+                },
+
+                loadScript(url) {
+                    return new Promise((resolve, reject) => {
+                        if (window.XLSX) { resolve(); return; }
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = () => resolve();
+                        script.onerror = () => reject(new Error('The spreadsheet viewer could not be loaded. Check your internet connection.'));
+                        document.head.appendChild(script);
+                    });
+                },
+
+                async openSpreadsheet(file) {
+                    this.viewer = { open: true, loading: true, title: file.title, error: '', note: '', sheetNames: [], active: 0 };
+                    viewerData.sheets = [];
+                    this.$refs.viewerBody.replaceChildren();
+
+                    try {
+                        await this.loadScript(spreadsheetScript);
+                        const response = await fetch(file.view_url);
+                        if (!response.ok) throw new Error('The file could not be loaded (HTTP ' + response.status + ').');
+                        const buffer = await response.arrayBuffer();
+                        if (buffer.byteLength > 15 * 1048576) throw new Error('This file is too large to show here. Log in to download it.');
+
+                        const workbook = file.extension === 'csv'
+                            ? window.XLSX.read(new TextDecoder('utf-8').decode(buffer), { type: 'string' })
+                            : window.XLSX.read(buffer, { type: 'array' });
+
+                        viewerData.sheets = workbook.SheetNames.map(name => ({
+                            name,
+                            rows: window.XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: '', raw: false, blankrows: false }),
+                        }));
+                        this.viewer.sheetNames = viewerData.sheets.map(sheet => sheet.name);
+                        this.viewer.loading = false;
+                        this.drawSheet();
+                    } catch (error) {
+                        this.viewer.loading = false;
+                        this.viewer.error = error.message || 'This file could not be shown.';
+                    }
+                },
+
+                /** Builds the table with textContent, so nothing inside a file can run as code. */
+                drawSheet() {
+                    const host = this.$refs.viewerBody;
+                    host.replaceChildren();
+                    const sheet = viewerData.sheets[this.viewer.active];
+                    if (!sheet) return;
+
+                    const limit = 500;
+                    const table = document.createElement('table');
+                    table.className = 'min-w-full border-collapse text-left text-xs';
+
+                    sheet.rows.slice(0, limit).forEach((row, index) => {
+                        const line = document.createElement('tr');
+                        row.slice(0, 60).forEach(cell => {
+                            const box = document.createElement(index === 0 ? 'th' : 'td');
+                            box.className = index === 0
+                                ? 'sticky top-0 whitespace-nowrap border-b border-slate-200 bg-slate-100 px-3 py-2 font-semibold'
+                                : 'whitespace-nowrap border-b border-slate-100 px-3 py-1.5';
+                            box.textContent = String(cell);
+                            line.appendChild(box);
+                        });
+                        table.appendChild(line);
+                    });
+
+                    host.appendChild(table);
+                    this.viewer.note = sheet.rows.length ? (sheet.rows.length > limit ? 'Showing the first ' + limit + ' of ' + sheet.rows.length + ' rows.' : sheet.rows.length + ' rows') : 'This sheet is empty.';
                 },
 
                 // ----- Accounts (administrators) -----

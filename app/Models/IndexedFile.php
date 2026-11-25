@@ -175,7 +175,7 @@ class IndexedFile extends Model
             'added' => $this->created_at->format('M j, Y'),
             'deleted' => $this->deleted_at?->format('M j, Y'),
             'download_url' => route('files.download', $this),
-            'view_url' => $this->publicUrl(),
+            'view_url' => route('files.preview', $this),
         ];
     }
 }

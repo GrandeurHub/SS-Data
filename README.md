@@ -29,9 +29,13 @@ Three kinds of visitors:
 
 | Who | Can do |
 | --- | --- |
-| Guest (not logged in) | View the file list and open files in the browser. No downloads. |
-| Client | Everything a guest can, plus download (single files and "Download selected" ZIP). |
+| Guest (not logged in) | See the file list only. The Open button is disabled and files cannot be opened or downloaded. |
+| Client | Everything a guest can, plus open files and download them (single files and "Download selected" ZIP). |
 | Administrator | Everything a client can, plus add, edit and delete files, restore deleted files, and create, edit, delete and restore accounts. |
+
+For logged-in users, "Open" never downloads: PDF, TXT and JSON open in a new browser tab, and CSV, XLS, XLSX and ODS open in an in-page
+table viewer (first 500 rows per sheet; the viewer script loads from cdn.sheetjs.com, so it needs internet).
+Other types (Word, PowerPoint, ZIP ...) show "No preview" and can only be downloaded. Guests get none of this: Open is disabled for them.
 
 Username and Password boxes are in the upper-right corner of the page (on small screens, tap "Log in").
 

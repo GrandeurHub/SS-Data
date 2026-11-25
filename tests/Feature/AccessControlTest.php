@@ -27,12 +27,13 @@ class AccessControlTest extends TestCase
         ]);
     }
 
-    public function test_guest_can_view_the_list_but_not_download_or_change_anything(): void
+    public function test_guest_can_see_the_list_but_not_open_download_or_change_anything(): void
     {
         $file = $this->makeFile();
 
         $this->get('/')->assertOk();
         $this->getJson('/files')->assertOk()->assertJsonPath('total', 1);
+        $this->get(route('files.preview', $file))->assertRedirect(route('login'));
         $this->get(route('files.download', $file))->assertRedirect(route('login'));
         $this->postJson('/files/download-selected', ['ids' => [$file->id]])->assertUnauthorized();
         $this->putJson("/files/{$file->id}", [])->assertUnauthorized();
@@ -46,6 +47,7 @@ class AccessControlTest extends TestCase
         $file = $this->makeFile();
         $client = User::factory()->create();
 
+        $this->actingAs($client)->get(route('files.preview', $file))->assertOk();
         $this->actingAs($client)->get(route('files.download', $file))->assertOk();
         $this->actingAs($client)->putJson("/files/{$file->id}", [])->assertForbidden();
         $this->actingAs($client)->deleteJson("/files/{$file->id}")->assertForbidden();
